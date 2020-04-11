@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+          integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js"></script>
+    <title>Stock Predictor</title>
+</head>
+<body>
+
+<div class="container-fluid">
+
+    <h2 class="text-center"><a href="https://github.com/SimonBerens/StockPredictor">Stock Predictor</a></h2>
+    <h6 class="text-center"> by <a href="https://github.com/SimonBerens"> Simon Berens </a></h6>
+
+    <div class="container">
+        <p>
+            This project is my first (and probably last *shudder*) endeavour into the world of stock
+            prediction. The goal of this project fluctuated a lot as my ambitions met reality, and eventually I settled
+            for predicting the Dow Jones opening price based on news from Reddit, since
+            <a href="https://www.kaggle.com/aaron7sun/stocknews">this</a> dataset was readily available and quite
+            thorough.
+        </p>
+        <p>
+            My model was based off <a href="https://www.aclweb.org/anthology/C/C16/C16-1229.pdf">this</a> paper and
+            used GloVe to create word embeddings and CNNs followed by LSTMs. The results were less than spectacular.
+            With a MAE of ~130, it was a far cry from accurately predicting the stock market. However, there were a
+            lot of things I think I could have done better that I can apply to a similar future project. For
+            starters, exact stock prices are very finicky. Perhaps the model would have achieved better accuracy if
+            instead I had focused on the direction of the stock market instead. Another potential source of error could
+            be the source of news. Sourcing exclusively stock related news could help my model's accuracy significantly,
+            as a lot of world news are not very related to the US stock market.
+        </p>
+        <p>
+            A small note regarding my choice of mode: interestingly, the best model (with a MAE of <em>just</em> ~90 had much smaller fluctuations, so I deemed it was underfitting and chose the model you
+            see below.
+        </p>
+        <p>Without further ado, here is (most of) the data:</p>
+        <canvas id="myChart"></canvas>
+        <div class="text-center">
+            <img src="/static/img/model.png" alt="model summary">
+        </div>
+    </div>
+
+
+</div>
+
+<script>
+
+    const headlines =
+    {{ headlines | tojson }}
+    const ctx = document.getElementById("myChart").getContext("2d");
+    const myChart = new Chart(ctx, {
+        type: "line",
+        data: {
+            labels: {{ dates | tojson }},
+            datasets: [{
+                label: "Actual",
+                borderColor: "green",
+                borderWidth: 0.5,
+                pointRadius: 1,
+                data: [
+                    {% for point in actual %}
+                        {x: new Date("{{ point.date }}"), y: {{ point.val }}},
+                    {% endfor %}
+
+                ]
+            }, {
+                label: "Predicted",
+                borderColor: "red",
+                borderWidth: 0.5,
+                pointRadius: 1,
+                data: [
+                    {% for point in predicted %}
+                        {x: new Date("{{ point.date }}"), y: {{ point.val }}},
+                    {% endfor %}
+                ]
+            }
+            ]
+        },
+        options: {
+            title: {
+                display: true,
+                text: "Opening Day Price Change"
+            },
+            scales: {
+                xAxes: [{
+                    scaleLabel: {
+                        display: true,
+                        labelString: "Time"
+                    }
+                }],
+                yAxes: [{
+                    scaleLabel: {
+                        display: true,
+                        labelString: "Opening Price Change"
+                    }
+                }]
+            },
+            tooltips: {
+                callbacks: {
+                    label: (toolTipItem, data) => {
+                        return headlines[toolTipItem.index];
+                    }
+                },
+            },
+        }
+    });
+</script>
+</body>
+</html>
